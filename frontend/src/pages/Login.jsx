@@ -11,41 +11,36 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // ✅ Use your actual Flask tunnel URL here
+  // ✅ Use your actual Flask backend tunnel URL (port 5000)
   const api = axios.create({
-    baseURL: "https://hpppms32-5000.inc1.devtunnels.ms",
+    baseURL: "http://127.0.0.1:5000", // Flask backend tunnel URL
+    // baseURL: "http://localhost:5000/", // Local development URL
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await api.post("/login", {
-        email,
-        password,
-        role,
-      });
+      const res = await api.post("/login", { email, password, role });
 
       if (res.data.role === "admin") {
-        setNotification({ type: "success", message: "Admin login successful!😍" });
-        setTimeout(() => {
-          navigate("/admin-dashboard");
-        }, 1000);
+        setNotification({ type: "success", message: "Admin login successful 👍" });
+        setTimeout(() => navigate("/admin-dashboard"), 1000);
       } else {
-        setNotification({ type: "success", message: "User login successful!😍" });
-        setTimeout(() => {
-          navigate("/user-dashboard");
-        }, 1000);
+        setNotification({ type: "success", message: "User login successful 👍" });
+        setTimeout(() => navigate("/user-dashboard"), 1000);
       }
     } catch (err) {
       console.error("Login error:", err.response || err.message);
-      setNotification({ type: "error", message: "Invalid credentials😗" });
+      setNotification({
+        type: "error",
+        message: err.response?.data?.error || "Login failed ☹️",
+      });
     }
   };
 
   return (
     <div className="login-container">
-      {/* Notification Banner */}
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}

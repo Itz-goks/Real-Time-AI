@@ -1,31 +1,57 @@
 from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from flask_cors import CORS
-from models import db, User, bcrypt
-from config import Config
 
+# ---------------------------
+# Config
+# ---------------------------
+class Config:
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://flaskuser:flaskpass@localhost:3306/login_db"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = "supersecretkey"
+
+# ---------------------------
+# App + Extensions
+# ---------------------------
 app = Flask(__name__)
 app.config.from_object(Config)
+
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
 # ✅ Correct CORS setup
 CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
          "http://localhost:5173",
-         "https://hpppms32-5000.inc1.devtunnels.ms"
+         "https://hpppms32-5173.inc1.devtunnels.ms/"  # frontend tunnel
      ]}},
      allow_headers=["Content-Type", "Authorization"])
 
-# Initialize extensions
-db.init_app(app)
-bcrypt.init_app(app)
+# ---------------------------
+# Model
+# ---------------------------
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    password_hash = db.Column(db.String(128))
 
+    def set_password(self, password):
+        self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
+
+# ---------------------------
+# Routes
+# ---------------------------
 @app.route("/")
 def home():
     return "Flask backend is running!"
 
-# ---------------------------
-# Register Route
-# ---------------------------
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
@@ -37,15 +63,12 @@ def register():
         return jsonify({"message": "User already exists"}), 400
 
     user = User(email=email, role=role)
-    user.set_password(password)  # bcrypt hash
+    user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
     return jsonify({"message": f"{role} registered successfully"}), 201
 
-# ---------------------------
-# Login Route (DB lookup)
-# ---------------------------
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
@@ -53,19 +76,12 @@ def login():
     password = data.get("password")
     role = data.get("role")
 
-    app.logger.info(f"Login attempt: {email}, role={role}")
-
     user = User.query.filter_by(email=email, role=role).first()
     if user and user.check_password(password):
-        app.logger.info("Login successful")
         return jsonify({"role": user.role}), 200
     else:
-        app.logger.warning("Login failed: invalid credentials")
         return jsonify({"error": "Invalid credentials"}), 401
 
-# ---------------------------
-# Admin Dashboard: Create User
-# ---------------------------
 @app.route("/create_user", methods=["POST"])
 def create_user():
     data = request.json
@@ -83,17 +99,11 @@ def create_user():
 
     return jsonify({"message": f"{role} created successfully!"}), 201
 
-# ---------------------------
-# Admin Dashboard: List Users
-# ---------------------------
 @app.route("/users", methods=["GET"])
 def get_users():
     users = User.query.all()
     return jsonify([{"id": u.id, "email": u.email, "role": u.role} for u in users])
 
-# ---------------------------
-# Admin Dashboard: Delete User
-# ---------------------------
 @app.route("/delete_user/<int:id>", methods=["DELETE"])
 def delete_user(id):
     user = User.query.get(id)
@@ -103,9 +113,6 @@ def delete_user(id):
     db.session.commit()
     return jsonify({"message": "User deleted"}), 200
 
-# ---------------------------
-# Admin Dashboard: Update User Role
-# ---------------------------
 @app.route("/update_user/<int:id>", methods=["PUT"])
 def update_user(id):
     data = request.json
