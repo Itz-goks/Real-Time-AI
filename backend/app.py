@@ -25,6 +25,7 @@ CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
          "http://localhost:5173",
+         "https://real-time-ai-nkgs.onrender.com",
          "https://real-time-ai-krgv.vercel.app",
          "https://real-time-egwinx1m5-itz-goks-projects.vercel.app"
      ]}},
