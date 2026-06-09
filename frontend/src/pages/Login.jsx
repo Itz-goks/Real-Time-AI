@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./Login.css";
+import "../styles/Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ function Login() {
 
   // ✅ Use your actual Flask backend tunnel URL (port 5000)
   const api = axios.create({
-    baseURL: "https://real-time-ai-nkgs.onrender.com", // Flask backend tunnel URL
+    baseURL: "http://127.0.0.1:5000", // Flask backend tunnel URL
     // baseURL: "http://localhost:5000/", // Local development URL
   });
 
@@ -21,7 +21,19 @@ function Login() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/login", { email, password, role });
+      const res = await axios.post("http://localhost:5000/login", { email, password, role });
+
+        if (res.status === 200) {
+          localStorage.setItem("userId", res.data.id);  // <-- save ID
+        if (res.data.role === "admin") {
+          window.location.href = "/admin-dashboard";
+        } else {
+          window.location.href = "/user-dashboard";
+        }
+      }
+
+      localStorage.setItem("userId", res.data.id);
+      localStorage.setItem("userRole", res.data.role);
 
       if (res.data.role === "admin") {
         setNotification({ type: "success", message: "Admin login successful 👍" });

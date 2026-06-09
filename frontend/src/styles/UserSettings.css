@@ -1,0 +1,25 @@
+.page-container {
+  padding: 30px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 500px;
+}
+
+.settings-form input {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.settings-form button {
+  padding: 12px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}

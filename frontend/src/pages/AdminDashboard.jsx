@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./AdminDashboard.css";
+import "../styles/AdminDashboard.css";
 
 function AdminDashboard() {
   const [email, setEmail] = useState("");
